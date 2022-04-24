@@ -6,6 +6,9 @@ public class BookPriceListWrapper {
 
     private List<BookPrice> priceList;
 
+    public BookPriceListWrapper() {
+    }
+
     public BookPriceListWrapper(List<BookPrice> priceList) {
         this.priceList = priceList;
     }

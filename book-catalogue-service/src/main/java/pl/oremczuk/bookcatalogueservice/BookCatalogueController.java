@@ -6,10 +6,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.reactive.function.client.WebClient;
 import pl.oremczuk.bookcatalogueservice.models.from_other_microservices.Book;
 import pl.oremczuk.bookcatalogueservice.models.BookCatalogue;
 import pl.oremczuk.bookcatalogueservice.models.from_other_microservices.BookListWrapper;
 import pl.oremczuk.bookcatalogueservice.models.from_other_microservices.BookPrice;
+import pl.oremczuk.bookcatalogueservice.models.from_other_microservices.BookPriceListWrapper;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +22,9 @@ public class BookCatalogueController {
 
     @Autowired
     private RestTemplate restTemplate;
+
+    @Autowired
+    private WebClient.Builder webClientBuilder;
 
 
     @GetMapping("/{bookId}")
@@ -44,8 +49,35 @@ public class BookCatalogueController {
                     })
                 .collect(Collectors.toList());
 
+    }
 
+    @GetMapping("/webflux")
+    public List<BookCatalogue> getBookCatalogueListUsingWebflux() {
+
+        BookPriceListWrapper bookWithPriceList = webClientBuilder.build()
+                .get()
+                .uri("http://localhost:8083/prices/")
+                .retrieve()
+                .bodyToMono(BookPriceListWrapper.class)
+                .block();
+
+
+        return bookWithPriceList.getPriceList().stream()
+                .map(bookWithPrice -> {
+
+                    Book book = webClientBuilder.build()
+                            .get()
+                            .uri("http://localhost:8082/books/" + bookWithPrice.getBookId())
+                            .retrieve()
+                            .bodyToMono(Book.class)
+                            .block();
+
+                    return new BookCatalogue(book.getBookId(), book.getName(), book.getAuthor(), bookWithPrice.getPrice());
+
+                })
+                .collect(Collectors.toList());
 
     }
+
 
 }
