@@ -30,8 +30,8 @@ public class BookCatalogueController {
     @GetMapping("/{bookId}")
     public BookCatalogue getBookCatalogueItem(@PathVariable String bookId) {
 
-        Book book = restTemplate.getForObject("http://localhost:8082/books/" + bookId, Book.class);
-        BookPrice bookWithPrice = restTemplate.getForObject("http://localhost:8083/prices/" + bookId, BookPrice.class);
+        Book book = restTemplate.getForObject("http://book-data-service/books/" + bookId, Book.class);
+        BookPrice bookWithPrice = restTemplate.getForObject("http://book-pricing-service/prices/" + bookId, BookPrice.class);
 
         return new BookCatalogue(bookId,book.getName(), book.getAuthor(), bookWithPrice.getPrice());
 
@@ -40,11 +40,11 @@ public class BookCatalogueController {
     @GetMapping()
     public List<BookCatalogue> getBookCatalogueList() {
 
-        BookListWrapper bookList = restTemplate.getForObject("http://localhost:8082/books/", BookListWrapper.class);
+        BookListWrapper bookList = restTemplate.getForObject("http://book-data-service/books/", BookListWrapper.class);
 
         return bookList.getBookList().stream()
                 .map(book -> {
-                    BookPrice bookWithPrice = restTemplate.getForObject("http://localhost:8083/prices/" + book.getBookId(), BookPrice.class);
+                    BookPrice bookWithPrice = restTemplate.getForObject("http://book-pricing-service/prices/" + book.getBookId(), BookPrice.class);
                     return new BookCatalogue(book.getBookId(), book.getName(), book.getAuthor(), bookWithPrice.getPrice());
                     })
                 .collect(Collectors.toList());
@@ -56,7 +56,7 @@ public class BookCatalogueController {
 
         BookPriceListWrapper bookWithPriceList = webClientBuilder.build()
                 .get()
-                .uri("http://localhost:8083/prices/")
+                .uri("http://book-pricing-service/prices/")
                 .retrieve()
                 .bodyToMono(BookPriceListWrapper.class)
                 .block();
@@ -67,7 +67,7 @@ public class BookCatalogueController {
 
                     Book book = webClientBuilder.build()
                             .get()
-                            .uri("http://localhost:8082/books/" + bookWithPrice.getBookId())
+                            .uri("http://book-data-service/books/" + bookWithPrice.getBookId())
                             .retrieve()
                             .bodyToMono(Book.class)
                             .block();
